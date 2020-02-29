@@ -1,13 +1,17 @@
 #coding=utf-8
 import argparse
+import os
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import tqdm
 
+from torch.autograd import Variable
 from tensorboardX import SummaryWriter
 
 from net import WSDDN
+from wsddn_dataset import WSDDNDataset
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -32,11 +36,59 @@ def get_args():
 
 
 def train(args, model):
-    loss = nn.BCELoss(weight=None, size_average=True)
+    criterion = nn.BCELoss(weight=None, size_average=True)
     model.cuda()
     optimizer1 = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
     optimizer2 = optim.SGD(model.parameters(), lr=0.1 * args.lr, momentum=0.9)
     board = SummaryWriter(log_dir=args.tensorboard_dir)
+    
+    with tqdm.tqdm(total=args.epoch) as progress:
+        if args.datamode == 'train':
+            train_data = WSDDNDataset(args)
+            train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=args.batch_size, shuffle=False, num_workers=1)
+            model.train()
+            for step in range(args.epoch):
+                running_loss = 0.0
+                for i, (images, ssw_block, labels) in enumerate(train_loader):
+                    images = Variable(images).cuda()
+                    ssw_block = Variable(ssw_block).cuda()
+                    labels = Variable(labels).cuda()
+                    if step < 10:
+                        optimizer1.zero_grad()
+                    else:
+                        optimizer2.zero_grad()
+                    
+                    output, output_clf, output_dct = model(images, ssw_block)
+                    output = torch.sigmoid(output)
+                    loss = criterion(output, labels)
+                    loss.backward()
+                    if step < 10:
+                        optimizer1.step()
+                    else:
+                        optimizer2.step()
+                    
+                    running_loss += loss.item()
+                    progress.set_description("Step: {step} Iteration: {iter} Loss: {loss}".format( \
+                        step=step, iter=i, loss=running_loss/500
+                    ))
+                    progress.update()
+
+                board.add_scalar('Train/loss', loss.item(), step)
+                torch.save(model.state_dict(), os.path.join(args.checkpoint_dir, 'wsddn.pkl'))
+            
+            print('Finished Training')
+            board.close()
+            torch.save(model.state_dict(), os.path.join(args.checkpoint_dir, 'wsddn.pkl'))
+                    
+                    
+    """
+    test_data = WSDDNDataset(args)
+    
+    
+    test_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=args.batch_size, shuffle=False)
+    """
+    
+    
     
     
     
