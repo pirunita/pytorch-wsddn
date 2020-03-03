@@ -10,6 +10,47 @@ class WSDDN(nn.Module):
     def __init__(self):
         super(WSDDN, self).__init__()
         
+        # VGG11
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=64),
+            nn.ReLU(inplace=True),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=128),
+            nn.ReLU(inplace=True),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=256),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=256),
+            nn.ReLU(inplace=True),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=512),
+            nn.ReLU(inplace=True),
+            
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=512),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(num_features=512),
+            nn.ReLU(inplace=True),
+            
+        )
+        """
         # Alexnet
         # pool5 for extracting features
         self.features = nn.Sequential(
@@ -29,7 +70,7 @@ class WSDDN(nn.Module):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2), dilation=(1, 1)),
         )
-        
+        """
         self.fc6 = nn.Linear(4096, 4096)
         self.fc7 = nn.Linear(4096, 4096)
         self.fc8c = nn.Linear(4096, 20)
