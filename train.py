@@ -15,7 +15,7 @@ from wsddn_dataset import WSDDNDataset
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('gpu_id', type=int, default=0)
+    parser.add_argument('--gpu_id', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.0001, \
         help='Base learning rate for Adam')
@@ -27,6 +27,7 @@ def get_args():
     parser.add_argument('--data_list', default='annotations.txt')
     parser.add_argument('--ssw_list', default='ssw.txt')
     
+    parser.add_argument('--pretrained_dir', type=str, default='pretrained', help='Load pretrained model')
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints', help='save checkpoint info')
     parser.add_argument('--tensorboard_dir', type=str, default='tensorboard', help='save tensorboard info')
     
@@ -40,8 +41,16 @@ def train(args, model):
     model.cuda()
     optimizer1 = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
     optimizer2 = optim.SGD(model.parameters(), lr=0.1 * args.lr, momentum=0.9)
+    
+    # Visualization
+    if not os.path.exists(args.tensorboard_dir):
+        os.makedirs(args.tensorboard_dir)
     board = SummaryWriter(log_dir=args.tensorboard_dir)
     
+    # Checkpoint
+    if not os.path.exists(args.checkpoint_dir):
+        os.makedirs(args.checkpoint_dir)
+        
     with tqdm.tqdm(total=args.epoch) as progress:
         if args.datamode == 'train':
             train_data = WSDDNDataset(args)
@@ -101,8 +110,9 @@ if __name__ == '__main__':
     
     model = WSDDN()
     
-    pretrained_dict = torch.load('vgg11_bn-6002323d.pth.1')
+    pretrained_dict = torch.load(os.path.join(args.pretrained_dir, 'vgg11_bn-6002323d.pth'))
     modified_dict = model.state_dict()
+    
     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in modified_dict}
     modified_dict.update(pretrained_dict)
     model.load_state_dict(modified_dict)
