@@ -1,1 +1,10 @@
+## Ignore File ##
+
+.DS_Store
 .vscode
+
+
+
+*.mat
+*.jpg
+*.txt
