@@ -1,9 +1,11 @@
 ## Ignore File ##
 
+__pycache__
 .DS_Store
 .vscode
 
 
+*.pth
 
 *.mat
 *.jpg
