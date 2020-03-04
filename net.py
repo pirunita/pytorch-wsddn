@@ -71,15 +71,14 @@ class WSDDN(nn.Module):
             nn.MaxPool2d(kernel_size=(3, 3), stride=(2, 2), dilation=(1, 1)),
         )
         """
-        self.fc6 = nn.Linear(4096, 4096)
-        self.fc7 = nn.Linear(4096, 4096)
-        self.fc8c = nn.Linear(4096, 20)
-        self.fc8d = nn.Linear(4096, 20)
+        self.fc6 = nn.Linear(2048, 2048)
+        self.fc7 = nn.Linear(2048, 2048)
+        self.fc8c = nn.Linear(2048, 20)
+        self.fc8d = nn.Linear(2048, 20)
         
     def forward(self, x, ssw_output):
         x = self.features(x)
         x = self.spp_layer(x, ssw_output)
-        
         x = F.relu(self.fc6(x))
         x = F.relu(self.fc7(x))
         x_clf = F.relu(self.fc8c(x))
@@ -99,15 +98,17 @@ class WSDDN(nn.Module):
         ssw_output = [BATCH_SIZE, r, 4]
         y.shape = [BATCH_SIZE, r, 4096]
         """
+        
         for i in range(BATCH_SIZE):
             for j in range(ssw.size(1)):
-                feature_map_piece = torch.unsqueeze(x[i, :, math.floor(ssw[i, j, 0]) : math.floor(ssw[i, j, 0] + ssw[i, j, 2]),
-                                               math.floor(ssw[i, j, 1]) : math.floor(ssw[i, j, 1] + ssw[i, j, 3])], 0)
-                feature_map_piece = spatial_pyramid_pool(previous_conv=feature_map_piece,
-                                                         num_sample=1,
-                                                         previous_conv_size = [feature_map_piece.size(2), feature_map_piece.size(3)],
+                feature_map_piece = torch.unsqueeze(x[i, :, math.floor(ssw[i, j, 0]) : math.floor(ssw[i, j, 0] + ssw[i, j, 2]), \
+                                                    math.floor(ssw[i, j, 1]) : math.floor(ssw[i, j, 1] + ssw[i, j, 3])], 0)
+                
+                feature_map_piece = spatial_pyramid_pool(previous_conv=feature_map_piece, \
+                                                         num_sample=1, \
+                                                         previous_conv_size = [feature_map_piece.size(2), feature_map_piece.size(3)], \
                                                          out_pool_size=[2, 2])
-
+                
                 if j == 0:
                     y_piece = feature_map_piece
                 else:
@@ -143,7 +144,9 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
         
         if(i == 0):
             spp = x.view(num_sample, -1)
+            #print('spp size: ', spp.size())
+            
         else:
             spp = torch.cat((spp, x.view(num_sample, -1)), 1)
-        
+            
         return spp
