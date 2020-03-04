@@ -1,4 +1,5 @@
 #coding=utf-8
+import json
 import math
 import os
 
@@ -16,8 +17,11 @@ class WSDDNDataset(data.Dataset):
         self.mode = args.datamode
         
         self.root = args.dataroot
-        self.data_list = args.data_list
-        self.ssw_list = args.ssw_list
+        #self.text_path = args.text_path
+        self.jpeg_path = args.jpeg_path
+        self.json_path = args.json_path
+        self.ssw_path = args.ssw_path
+        
         
         self.transform = transforms.Compose([  \
             transforms.Resize([480, 480]), \
@@ -29,32 +33,38 @@ class WSDDNDataset(data.Dataset):
         
         self.imgs = []
         
-        with open(os.path.join(self.root, self.data_list), 'r') as f:
-            for line in f.readlines():
-                words = line.rstrip()
-                #words = line.split()
-                print(words)
+        with open(os.path.join(args.dataroot, args.json_path), 'r') as jr:
+            self.json_list = json.load(jr)
+        
+        
+        
+        with open(os.path.join(self.root, self.ssw_path), 'r') as f:
+            for ssw_line in f.readlines():
+                ssw_info = ssw_line.rstrip()
+                ssw_list = ssw_info.split()
+                file_name = os.path.splitext(ssw_list[0])[0]
+    
                 if self.mode == 'train':
+                    # JSON parsing
                     label_current = [0 for i in range(20)]
-                    for i in range(1, len(words)):
-                        label_current[int(words[i])] = 1
-                    for ssw in self.ssw_list:
-                        ssw = ssw.rstrip()
-                        word_ssw = ssw.split()
-                        if word_ssw[0] == words[0]:
-                            ssw_block = torch.Tensor(math.floor((len(word_ssw) - 1) / 4), 4)
-                            for i in range(math.floor((len(word_ssw) - 1) / 4)):
-                                w = max(int(word_ssw[i*4 + 3]), 2)
-                                h = max(int(word_ssw[i*4 + 4]), 2)
-                                ssw_block[i, 0] = (30 - w if (int(word_ssw[i*4 + 1]) + w >= 31) else int(word_ssw[i*4 + 1]))
-                                ssw_block[i, 1] = (30 - h if (int(word_ssw[i*4 + 2]) + h >= 31) else int(word_ssw[i*4 + 2]))
-                                ssw_block[i, 2] = w
-                                ssw_block[i, 3] = h
-                            break
-                        else:
-                            ssw_block = torch.tensor([0, 0, 2, 2])
-                    self.imgs.append([words[0], ssw_block, label_current])
+                    label_list = self.json_list[file_name]
+                    for i in range(0, len(label_list)):
+                        label_current[i] = 1
                     
+                    # Selective Search Data parsing
+                    ssw_block = torch.Tensor(math.floor((len(ssw_list) - 1) / 4), 4)
+                    
+                    for i in range(math.floor((len(ssw_list) - 1) / 4)):
+                        w = max(int(ssw_list[i*4 + 3]), 2)
+                        h = max(int(ssw_list[i*4 + 4]), 2)
+                        ssw_block[i, 0] = (30 - w if (int(ssw_list[i*4 + 1]) + w >= 31) else int(ssw_list[i*4 + 1]))
+                        ssw_block[i, 1] = (30 - h if (int(ssw_list[i*4 + 2]) + h >= 31) else int(ssw_list[i*4 + 2]))
+                        ssw_block[i, 2] = w
+                        ssw_block[i, 3] = h
+                    
+                    self.imgs.append([file_name, ssw_block, label_current])
+                
+                """
                 elif self.mode == 'test':
                     label_current = [0 for i in range(20)]
                     for i in range(1, len(words)):
@@ -76,9 +86,9 @@ class WSDDNDataset(data.Dataset):
                             ssw_block = torch.tensor([0, 0, 2, 2])
                     
                     self.imgs.append([words[0], ssw_block, label_current])
-                        
+                """
     def __getitem__(self, index):
-        current_img = Image.open(os.path.join(self.root + self.imgs[index][0]))
+        current_img = Image.open(os.path.join(self.root, self.jpeg_path, self.imgs[index][0] + '.jpg'))
         data_once = self.transform(current_img)
         ssw_block = self.imgs[index][1]
         label_once = self.imgs[index][2]
