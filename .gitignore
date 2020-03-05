@@ -20,5 +20,6 @@ __pycache__
 data
 tensorboard
 pretrained
+checkpoints
 
 pascal_voc.py
