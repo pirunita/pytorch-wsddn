@@ -6,8 +6,19 @@ __pycache__
 
 
 *.pth
+*.pkl
 
 *.mat
 *.jpg
 *.txt
 *.json
+
+## tensorboard
+*.khosungpil-System-Product-Name
+
+# Folder
+data
+tensorboard
+pretrained
+
+pascal_voc.py
