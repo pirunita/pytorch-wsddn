@@ -17,9 +17,9 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu_id', type=int, default=0)
     parser.add_argument('--batch_size', type=int, default=1)
-    parser.add_argument('--lr', type=float, default=0.0001, \
+    parser.add_argument('--lr', type=float, default=0.00001, \
         help='Base learning rate for Adam')
-    parser.add_argument('--epoch', type=int, default=40)
+    parser.add_argument('--epoch', type=int, default=20)
     parser.add_argument('--datamode', default='train')
     
     # Directory
@@ -60,6 +60,7 @@ def train(args, model):
         model.train()
         for step in tqdm.tqdm(range(args.epoch)):
             running_loss = 0.0
+            train_size = 0
             for i, (images, ssw_block, labels) in tqdm.tqdm(enumerate(train_loader)):
                 
                 images = Variable(images).cuda()
@@ -73,21 +74,27 @@ def train(args, model):
                 output, output_clf, output_dct = model(images, ssw_block)
                 output = torch.sigmoid(output)
                 loss = criterion(output, labels)
+                
+                if step < 10:
+                    optimizer1.zero_grad()
+                else:
+                    optimizer2.zero_grad()
                 loss.backward()
+                
                 if step < 10:
                     optimizer1.step()
                 else:
                     optimizer2.step()
                 
                 running_loss += loss.item()
-                
-                """
-                print("Step: {step} Iteration: {iter} Loss: {loss}".format( \
-                    step=step, iter=i, loss=running_loss/500
-                ))
-                """
+                train_size += 1
+            
+            print("Step: {step} Loss: {loss}".format( \
+                step=step + 1, loss=running_loss/train_size
+            ))
+            
 
-                board.add_scalar('Train/loss', loss.item(), step)
+            board.add_scalar('Train/loss', running_loss/train_size, step+1)
             torch.save(model.state_dict(), os.path.join(args.checkpoint_dir, 'wsddn.pkl'))
         
         print('Finished Training')
