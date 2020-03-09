@@ -20,7 +20,7 @@ def get_args():
     parser.add_argument('--lr', type=float, default=0.00001, \
         help='Base learning rate for Adam')
     parser.add_argument('--epoch', type=int, default=20)
-    parser.add_argument('--datamode', default='train')
+    parser.add_argument('--datamode', type=str, default='train')
     
     # Directory
     parser.add_argument('--dataroot', default='data')
