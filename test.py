@@ -96,7 +96,7 @@ def test(args, model):
             for j in range(output.shape[1]):
                 if output[0, j] > 0.05:
                     for k in range(output_det.shape[0]):
-                        if output_det[0, k, j] > 0.1:
+                        if output_det[0, k, j] > 0.05:
                             draw_rect(args, file_name, ssw_block[0, k, :].data.cpu().numpy())
                             #draw_rect(args, file_name, images.data.cpu().clone(), ssw_block[0, k, :].data.cpu().numpy())
             #debugging
