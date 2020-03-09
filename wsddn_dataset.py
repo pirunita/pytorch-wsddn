@@ -33,36 +33,36 @@ class WSDDNDataset(data.Dataset):
         
         self.imgs = []
         
-        with open(os.path.join(args.dataroot, args.json_path), 'r') as jr:
+        with open(os.path.join(self.root, self.mode, self.json_path), 'r') as jr:
             self.json_list = json.load(jr)
         
         
         
-        with open(os.path.join(self.root, self.ssw_path), 'r') as f:
+        with open(os.path.join(self.root, self.mode, self.ssw_path), 'r') as f:
             for ssw_line in f.readlines():
                 ssw_info = ssw_line.rstrip()
                 ssw_list = ssw_info.split()
                 file_name = os.path.splitext(ssw_list[0])[0]
     
-                if self.mode == 'train':
-                    # JSON parsing
-                    label_current = [0 for i in range(20)]
-                    label_list = self.json_list[file_name]
-                    for i in range(0, len(label_list)):
-                        label_current[i] = 1
-                    
-                    # Selective Search Data parsing
-                    ssw_block = torch.Tensor(math.floor((len(ssw_list) - 1) / 4), 4)
-                    
-                    for i in range(math.floor((len(ssw_list) - 1) / 4)):
-                        w = max(int(ssw_list[i*4 + 3]), 2)
-                        h = max(int(ssw_list[i*4 + 4]), 2)
-                        ssw_block[i, 0] = (30 - w if (int(ssw_list[i*4 + 1]) + w >= 31) else int(ssw_list[i*4 + 1]))
-                        ssw_block[i, 1] = (30 - h if (int(ssw_list[i*4 + 2]) + h >= 31) else int(ssw_list[i*4 + 2]))
-                        ssw_block[i, 2] = w
-                        ssw_block[i, 3] = h
-                    
-                    self.imgs.append([file_name, ssw_block, label_current])
+                #if self.mode == 'train':
+                # JSON parsing
+                label_current = [0 for i in range(20)]
+                label_list = self.json_list[file_name]
+                for i in range(0, len(label_list)):
+                    label_current[i] = 1
+                
+                # Selective Search Data parsing
+                ssw_block = torch.Tensor(math.floor((len(ssw_list) - 1) / 4), 4)
+                
+                for i in range(math.floor((len(ssw_list) - 1) / 4)):
+                    w = max(int(ssw_list[i*4 + 3]), 2)
+                    h = max(int(ssw_list[i*4 + 4]), 2)
+                    ssw_block[i, 0] = (30 - w if (int(ssw_list[i*4 + 1]) + w >= 31) else int(ssw_list[i*4 + 1]))
+                    ssw_block[i, 1] = (30 - h if (int(ssw_list[i*4 + 2]) + h >= 31) else int(ssw_list[i*4 + 2]))
+                    ssw_block[i, 2] = w
+                    ssw_block[i, 3] = h
+                
+                self.imgs.append([file_name, ssw_block, label_current])
                 
                 """
                 elif self.mode == 'test':
@@ -81,19 +81,19 @@ class WSDDNDataset(data.Dataset):
                                 ssw_block[i, 1] = (30 - h if (int(word_ssw[i*4 + 2]) + h >= 31) else int(word_ssw[i*4 + 2]))
                                 ssw_block[i, 2] = w
                                 ssw_block[i, 3] = h
-                            break
                         else:
                             ssw_block = torch.tensor([0, 0, 2, 2])
                     
                     self.imgs.append([words[0], ssw_block, label_current])
                 """
     def __getitem__(self, index):
-        current_img = Image.open(os.path.join(self.root, self.jpeg_path, self.imgs[index][0] + '.jpg'))
+        current_img = Image.open(os.path.join(self.root, self.mode, self.jpeg_path, self.imgs[index][0] + '.jpg'))
+        file_name = self.imgs[index][0]
         data_once = self.transform(current_img)
         ssw_block = self.imgs[index][1]
         label_once = self.imgs[index][2]
         
-        return data_once, ssw_block, torch.Tensor(label_once)
+        return file_name, data_once, ssw_block, torch.Tensor(label_once)
 
     def __len__(self):
         return len(self.imgs)
