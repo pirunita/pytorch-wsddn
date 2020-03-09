@@ -82,14 +82,14 @@ class WSDDN(nn.Module):
         x = F.relu(self.fc6(x))
         x = F.relu(self.fc7(x))
         x_clf = F.relu(self.fc8c(x))
-        x_dct = F.relu(self.fc8d(x))
+        x_det = F.relu(self.fc8d(x))
         sigma_clf = F.softmax(x_clf, dim=2)
-        sigma_dct = F.softmax(x_dct, dim=1)
+        sigma_det = F.softmax(x_det, dim=1)
         
-        x = sigma_clf * sigma_dct
+        x = sigma_clf * sigma_det
         x = torch.sum(x, dim=1)
         
-        return x, sigma_clf, sigma_dct
+        return x, sigma_clf, sigma_det
         
     def spp_layer(self, x, ssw):
         #x.shape = [BATCH_SIZE, 512, 14, 14] ssw_get.shape = [BATCH_SIZE, R, 4] y.shape = [BATCH_SIZE, R, 4096]
