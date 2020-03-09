@@ -11,6 +11,7 @@ import tqdm
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot', default='data')
+    parser.add_argument('--data_mode', default='test')
     parser.add_argument('--data_list', default='annotations.txt')
     parser.add_argument('--data_path', default='JPEGImages')
     parser.add_argument('--ssw_list', default='ssw.txt')
@@ -48,12 +49,12 @@ def main():
     args = get_args()
     
     
-    fr = open(os.path.join(args.dataroot, args.data_list), 'r')
-    with open(os.path.join(args.ssw_list), 'w') as fw:
+    fr = open(os.path.join(args.dataroot, args.data_mode, args.data_list), 'r')
+    with open(os.path.join(args.dataroot, args.data_mode, args.ssw_list), 'w') as fw:
     
         for word in tqdm.tqdm(fr.readlines()):
             word = word.rstrip()
-            image = cv2.imread(os.path.join(args.dataroot, args.data_path, str(word)))
+            image = cv2.imread(os.path.join(args.dataroot, args.data_mode, args.data_path, str(word) + '.jpg'))
             image = cv2.resize(image, (480, 480))
             region_proposal = ssw(image)
             region_proposal = feature_mapping(region_proposal)
