@@ -61,7 +61,7 @@ def train(args, model):
         for step in tqdm.tqdm(range(args.epoch)):
             running_loss = 0.0
             train_size = 0
-            for i, (images, ssw_block, labels) in tqdm.tqdm(enumerate(train_loader)):
+            for i, (file_name, images, ssw_block, labels) in tqdm.tqdm(enumerate(train_loader)):
                 
                 images = Variable(images).cuda()
                 ssw_block = Variable(ssw_block).cuda()
@@ -71,7 +71,7 @@ def train(args, model):
                 else:
                     optimizer2.zero_grad()
                 
-                output, output_clf, output_dct = model(images, ssw_block)
+                output, output_clf, output_det = model(images, ssw_block)
                 output = torch.sigmoid(output)
                 loss = criterion(output, labels)
                 
