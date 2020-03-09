@@ -21,6 +21,6 @@ data
 tensorboard
 pretrained
 checkpoints
-result
+result*
 
 pascal_voc.py
