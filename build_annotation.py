@@ -27,6 +27,7 @@ print(CLASSES_TO_INT)
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot', default='data')
+    parser.add_argument('--data_mode', default='test')
     parser.add_argument('--data_path', default='Annotations')
     parser.add_argument('--json_path', default='voc2007.json')
     parser.add_argument('--text_path', default='annotations.txt')
@@ -39,16 +40,17 @@ def get_args():
 def main():
     args = get_args()
     print(args)
-    xml_file_list = sorted(os.listdir(os.path.join(args.dataroot, args.data_path)))
+    xml_file_list = sorted(os.listdir(os.path.join(args.dataroot, args.data_mode, args.data_path)))
     
-    ff = open(os.path.join(args.dataroot, args.text_path), 'w')
-    with open(os.path.join(args.dataroot, args.json_path), 'w') as jf:
+    ff = open(os.path.join(args.dataroot, args.data_mode, args.text_path), 'w')
+    with open(os.path.join(args.dataroot, args.data_mode, args.json_path), 'w') as jf:
         label_dict = {}
         for xml_file_name in tqdm.tqdm(xml_file_list):
             file_name = os.path.splitext(xml_file_name)[0]
+            
             ff.write(file_name + '\n')
             
-            xml_file = open(os.path.join(args.dataroot, args.data_path, xml_file_name), 'r')
+            xml_file = open(os.path.join(args.dataroot, args.data_mode, args.data_path, xml_file_name), 'r')
             xml_tree = Et.parse(xml_file)
             xml_root = xml_tree.getroot()
             xml_objects = xml_root.findall('object')
