@@ -92,9 +92,14 @@ def test(args, model):
             k: # of proposal
             ssw_block: 16*left, 16*top, 16*width, 16*height
             """
+            print('output', output.shape)
+            print('output_det', output_det.shape)
+            print('output_clf', output_clf.shape)
+            
             
             for j in range(output.shape[1]):
                 if output[0, j] > 0.05:
+                    print('fuck', output_det[0, :, j])
                     for k in range(output_det.shape[0]):
                         if output_det[0, k, j] > 0.05:
                             draw_rect(args, file_name, ssw_block[0, k, :].data.cpu().numpy())
