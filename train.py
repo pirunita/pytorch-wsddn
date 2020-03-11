@@ -33,6 +33,9 @@ def get_args():
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints', help='save checkpoint info')
     parser.add_argument('--tensorboard_dir', type=str, default='tensorboard', help='save tensorboard info')
     
+    # Backbone Network
+    parser.add_argument('--backbone_network', type=str, default='vgg11')
+    
     args = parser.parse_args()
     
     return args
@@ -120,9 +123,13 @@ if __name__ == '__main__':
     # Setting GPU number
     torch.cuda.set_device(args.gpu_id)
     
-    model = WSDDN()
+    model = WSDDN(args)
     
-    pretrained_dict = torch.load(os.path.join(args.pretrained_dir, 'vgg11_bn-6002323d.pth'))
+    if args.backbone_network == 'vgg11':
+        pretrained_dict = torch.load(os.path.join(args.pretrained_dir, 'vgg11_bn-6002323d.pth'))
+    elif args.backbone_network == 'alexnet':
+        pretrained_dict = torch.load(os.path.join(args.pretrained_dir, 'alexnet-owt-4df8aa71.pth'))
+    
     modified_dict = model.state_dict()
     
     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in modified_dict}
