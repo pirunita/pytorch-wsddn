@@ -17,10 +17,10 @@ __pycache__
 *.khosungpil-System-Product-Name
 
 # Folder
-data
-tensorboard
-pretrained
-checkpoints
+data*
+tensorboard*
+pretrained*
+checkpoints*
 result*
 
 pascal_voc.py
