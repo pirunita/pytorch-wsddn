@@ -27,7 +27,8 @@ def get_args():
     parser.add_argument('--jpeg_path', default='JPEGImages')
     parser.add_argument('--text_path', default='annotations.txt')
     parser.add_argument('--json_path', default='voc2007.json')
-    parser.add_argument('--ssw_path', default='ssw.txt')
+    #parser.add_argument('--ssw_path', default='ssw.txt')
+    parser.add_argument('--ssw_path', default='voc_2007_trainval.mat')
     
     parser.add_argument('--pretrained_dir', type=str, default='pretrained', help='Load pretrained model')
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints', help='save checkpoint info')
