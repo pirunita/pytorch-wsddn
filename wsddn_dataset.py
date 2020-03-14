@@ -1,14 +1,23 @@
 #coding=utf-8
 import json
+import logging
 import math
 import os
 
-
+import scipy.io as sio
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
 
 from PIL import Image
+
+# Set logger
+logger = logging.getLogger('DataLoader')
+logger.handlers.clear()
+logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+logger.addHandler(stream_handler)
 
 class WSDDNDataset(data.Dataset):
     def __init__(self, args):
@@ -19,8 +28,9 @@ class WSDDNDataset(data.Dataset):
         self.root = args.dataroot
         #self.text_path = args.text_path
         self.jpeg_path = args.jpeg_path
-        self.json_path = args.json_path
+        self.image_label_path = args.image_label_path
         self.ssw_path = args.ssw_path
+        self.text_path = args.text_path
         
         
         self.transform = transforms.Compose([  \
@@ -32,60 +42,41 @@ class WSDDNDataset(data.Dataset):
         ])
         
         self.imgs = []
+        self.ssw_list = sio.loadmat(os.path.join(self.root, self.mode, self.ssw_path))['boxes'] 
         
+            
+        # Json, trainval 5011
         with open(os.path.join(self.root, self.mode, self.json_path), 'r') as jr:
-            self.json_list = json.load(jr)
+            self.image_label_list = json.load(jr)
         
+        # logging
+        logger.info('Selective Search Work List' + self.ssw_list.shape)
+        logger.info('Image label List' + self.image_label_list.shape)
         
-        
-        with open(os.path.join(self.root, self.mode, self.ssw_path), 'r') as f:
-            for ssw_line in f.readlines():
-                ssw_info = ssw_line.rstrip()
-                ssw_list = ssw_info.split()
-                file_name = os.path.splitext(ssw_list[0])[0]
-    
-                #if self.mode == 'train':
-                # JSON parsing
-                label_current = [0 for i in range(20)]
-                label_list = self.json_list[file_name]
-                for i in range(0, len(label_list)):
-                    label_current[i] = 1
+        with open(os.path.join(self.root, self.mode, self.text_path), 'r') as text_f:
+            for idx, file_name in enumerate(text_f.readLines()):
+                file_name = file_name.rstrip()
                 
-                # Selective Search Data parsing
-                ssw_block = torch.Tensor(math.floor((len(ssw_list) - 1) / 4), 4)
+                # image_label parsing
+                image_label_current = [0 for i in range(20)]
+                image_label_list = self.image_label_list[file_name]
+                for i in range(0, len(image_label_list)):
+                    image_label[i] = 1
+                    
+                ssw_info = ssw_list[idx].split()
+                ssw_block = torch.Tensor(math.floor((len(ssw_info) - 1) / 4), 4)
                 
-                for i in range(math.floor((len(ssw_list) - 1) / 4)):
+                for i in range(math.floor((len(ssw_info) - 1) / 4)):
                     w = max(int(ssw_list[i*4 + 3]), 2)
                     h = max(int(ssw_list[i*4 + 4]), 2)
-                    ssw_block[i, 0] = (30 - w if (int(ssw_list[i*4 + 1]) + w >= 31) else int(ssw_list[i*4 + 1]))
-                    ssw_block[i, 1] = (30 - h if (int(ssw_list[i*4 + 2]) + h >= 31) else int(ssw_list[i*4 + 2]))
+                    ssw_block[i, 0] = (30 - w if (int(ssw_info[i*4 + 1]) + w >= 31) else int(ssw_info[i*4 + 1]))
+                    ssw_block[i, 1] = (30 - h if (int(ssw_info[i*4 + 2]) + h >= 31) else int(ssw_info[i*4 + 2]))
                     ssw_block[i, 2] = w
                     ssw_block[i, 3] = h
-                
-                self.imgs.append([file_name, ssw_block, label_current])
-                
-                """
-                elif self.mode == 'test':
-                    label_current = [0 for i in range(20)]
-                    for i in range(1, len(words)):
-                        label_current[int(words[i])] = 1
-                    for ssw in self.ssw_list:
-                        ssw = ssw.rstrip()
-                        words_ssw = ssw.split()
-                        if word_ssw[0] == words[0]:
-                            ssw_block = torch.Tensor(math.floor((len(word_ssw) - 1) / 4), 4)
-                            for i in range(math.floor((len(word_ssw) - 1) / 4)):
-                                w = max(int(word_ssw[i*4 + 3]), 2)
-                                h = max(int(word_ssw[i*4 + 4]), 2)
-                                ssw_block[i, 0] = (30 - w if (int(word_ssw[i*4 + 1]) + w >= 31) else int(word_ssw[i*4 + 1]))
-                                ssw_block[i, 1] = (30 - h if (int(word_ssw[i*4 + 2]) + h >= 31) else int(word_ssw[i*4 + 2]))
-                                ssw_block[i, 2] = w
-                                ssw_block[i, 3] = h
-                        else:
-                            ssw_block = torch.tensor([0, 0, 2, 2])
                     
-                    self.imgs.append([words[0], ssw_block, label_current])
-                """
+                self.imgs.append([file_name, ssw_block, label_current])
+            
+
     def __getitem__(self, index):
         current_img = Image.open(os.path.join(self.root, self.mode, self.jpeg_path, self.imgs[index][0] + '.jpg'))
         file_name = self.imgs[index][0]
