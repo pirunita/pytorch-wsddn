@@ -27,9 +27,9 @@ print(CLASSES_TO_INT)
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataroot', default='data')
-    parser.add_argument('--data_mode', default='test')
+    parser.add_argument('--data_mode', default='train')
     parser.add_argument('--data_path', default='Annotations')
-    parser.add_argument('--json_path', default='voc2007.json')
+    parser.add_argument('--image_label_path', default='voc2007.json')
     parser.add_argument('--text_path', default='annotations.txt')
     
     args = parser.parse_args()
@@ -64,11 +64,11 @@ def main():
         
         json.dump(label_dict, jf)
         
-    """
-    with open(os.path.join('data/annotations.txt'), 'w') as f:
+    
+    with open(os.path.join(args.dataroot, args.data_mode, args.text_path), 'w') as f:
         for ele in tqdm.tqdm(file_list):
             f.write(ele + "\n")
-    """
+    
 
 
 if __name__=='__main__':
