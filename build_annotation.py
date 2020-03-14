@@ -29,7 +29,7 @@ def get_args():
     parser.add_argument('--dataroot', default='data')
     parser.add_argument('--data_mode', default='train')
     parser.add_argument('--data_path', default='Annotations')
-    parser.add_argument('--image_label_path', default='voc2007.json')
+    parser.add_argument('--image_label_path', default='voc_2007_trainval_image_label.json')
     parser.add_argument('--text_path', default='annotations.txt')
     
     args = parser.parse_args()
@@ -43,7 +43,7 @@ def main():
     xml_file_list = sorted(os.listdir(os.path.join(args.dataroot, args.data_mode, args.data_path)))
     
     ff = open(os.path.join(args.dataroot, args.data_mode, args.text_path), 'w')
-    with open(os.path.join(args.dataroot, args.data_mode, args.json_path), 'w') as jf:
+    with open(os.path.join(args.dataroot, args.data_mode, args.image_label_path), 'w') as jf:
         label_dict = {}
         for xml_file_name in tqdm.tqdm(xml_file_list):
             file_name = os.path.splitext(xml_file_name)[0]
@@ -64,11 +64,11 @@ def main():
         
         json.dump(label_dict, jf)
         
-    
+    """
     with open(os.path.join(args.dataroot, args.data_mode, args.text_path), 'w') as f:
         for ele in tqdm.tqdm(file_list):
             f.write(ele + "\n")
-    
+    """
 
 
 if __name__=='__main__':
