@@ -42,33 +42,33 @@ class WSDDNDataset(data.Dataset):
         ])
         
         self.imgs = []
-        self.ssw_list = sio.loadmat(os.path.join(self.root, self.mode, self.ssw_path))['boxes'] 
+        self.ssw_list = sio.loadmat(os.path.join(self.root, self.mode, self.ssw_path))['boxes'][0] 
         
             
         # Json, trainval 5011
-        with open(os.path.join(self.root, self.mode, self.json_path), 'r') as jr:
+        with open(os.path.join(self.root, self.mode, self.image_label_path), 'r') as jr:
             self.image_label_list = json.load(jr)
         
         # logging
-        logger.info('Selective Search Work List' + self.ssw_list.shape)
-        logger.info('Image label List' + self.image_label_list.shape)
+        logger.info('Selective Search Work List' + str(self.ssw_list.shape))
+        #logger.info('Image label List' + str(self.image_label_list.shape))
         
         with open(os.path.join(self.root, self.mode, self.text_path), 'r') as text_f:
-            for idx, file_name in enumerate(text_f.readLines()):
+            for idx, file_name in enumerate(text_f.readlines()):
                 file_name = file_name.rstrip()
                 
                 # image_label parsing
                 image_label_current = [0 for i in range(20)]
                 image_label_list = self.image_label_list[file_name]
                 for i in range(0, len(image_label_list)):
-                    image_label[i] = 1
-                    
-                ssw_info = ssw_list[idx].split()
-                ssw_block = torch.Tensor(math.floor((len(ssw_info) - 1) / 4), 4)
+                    image_label_current[i] = 1
+                ssw_info = self.ssw_list[idx]
+                ssw_block = torch.Tensor(math.floor((ssw_info.shape[0] - 1) / 4), 4)
                 
-                for i in range(math.floor((len(ssw_info) - 1) / 4)):
-                    w = max(int(ssw_list[i*4 + 3]), 2)
-                    h = max(int(ssw_list[i*4 + 4]), 2)
+                for i in range(math.floor((ssw_info.shape[0] - 1) / 4)):
+                    print(ssw_info[i*4 + 3])
+                    w = max(int(ssw_info[i*4 + 3]), 2)
+                    h = max(int(ssw_info[i*4 + 4]), 2)
                     ssw_block[i, 0] = (30 - w if (int(ssw_info[i*4 + 1]) + w >= 31) else int(ssw_info[i*4 + 1]))
                     ssw_block[i, 1] = (30 - h if (int(ssw_info[i*4 + 2]) + h >= 31) else int(ssw_info[i*4 + 2]))
                     ssw_block[i, 2] = w
