@@ -8,6 +8,7 @@ import scipy.io as sio
 import torch
 import torch.utils.data as data
 import torchvision.transforms as transforms
+import tqdm
 
 from PIL import Image
 
@@ -34,7 +35,7 @@ class WSDDNDataset(data.Dataset):
         
         
         self.transform = transforms.Compose([  \
-            transforms.Resize([480, 480]), \
+            transforms.Resize([500, 500]), \
             transforms.RandomHorizontalFlip(), \
             transforms.ToTensor(), \
             transforms.Normalize(mean = [ 0.485, 0.456, 0.406],
@@ -54,7 +55,7 @@ class WSDDNDataset(data.Dataset):
         #logger.info('Image label List' + str(self.image_label_list.shape))
         
         with open(os.path.join(self.root, self.mode, self.text_path), 'r') as text_f:
-            for idx, file_name in enumerate(text_f.readlines()):
+            for idx, file_name in tqdm.tqdm(enumerate(text_f.readlines())):
                 file_name = file_name.rstrip()
                 
                 # image_label parsing
@@ -63,8 +64,24 @@ class WSDDNDataset(data.Dataset):
                 for i in range(0, len(image_label_list)):
                     image_label_current[i] = 1
                 ssw_info = self.ssw_list[idx]
-                ssw_block = torch.Tensor(math.floor((ssw_info.shape[0] - 1) / 4), 4)
-                
+                ssw_block = torch.Tensor(math.floor((ssw_info.shape[0])), 4)
+                # x, y, w, h 
+                for i in range(0, ssw_info.shape[0]):
+                    ssw_block[i, 0] = math.floor(ssw_info[i, 0] / 16) + 1
+                    ssw_block[i, 1] = math.floor(ssw_info[i, 1] / 16) + 1
+                    ssw_block[i, 2] = math.ceil((ssw_info[i, 0] + ssw_info[i, 2]) / 16) - 1 - (math.floor(ssw_info[i, 0] / 16) + 1)
+                    ssw_block[i, 3] = math.ceil((ssw_info[i, 1] + ssw_info[i, 3]) / 16) - 1 - (math.floor(ssw_info[i, 1] / 16) + 1)
+                    w = max(int(ssw_block[i, 2]), 2)
+                    h = max(int(ssw_block[i, 3]), 2)
+                    ssw_block[i, 0] = (30 - w if (int(ssw_block[i, 0]) + w >= 30) else int(ssw_block[i, 0])) 
+                    ssw_block[i, 1] = (30 - h if (int(ssw_block[i, 1]) + h >= 30) else int(ssw_block[i, 1]))
+                    if ssw_block[i, 0] == -1:
+                        ssw_block[i, 0] = 0
+                    if ssw_block[i, 1] == -1:
+                        ssw_block[i, 1] = 0
+                    ssw_block[i, 2] = w
+                    ssw_block[i, 3] = h
+                """
                 for i in range(math.floor((ssw_info.shape[0] - 1) / 4)):
                     print(ssw_info[i*4 + 3])
                     w = max(int(ssw_info[i*4 + 3]), 2)
@@ -73,8 +90,8 @@ class WSDDNDataset(data.Dataset):
                     ssw_block[i, 1] = (30 - h if (int(ssw_info[i*4 + 2]) + h >= 31) else int(ssw_info[i*4 + 2]))
                     ssw_block[i, 2] = w
                     ssw_block[i, 3] = h
-                    
-                self.imgs.append([file_name, ssw_block, label_current])
+                """    
+                self.imgs.append([file_name, ssw_block, image_label_current])
             
 
     def __getitem__(self, index):
@@ -88,4 +105,4 @@ class WSDDNDataset(data.Dataset):
 
     def __len__(self):
         return len(self.imgs)
-        
+    
