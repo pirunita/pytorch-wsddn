@@ -111,6 +111,8 @@ class WSDDN(nn.Module):
     def forward(self, x, ssw_output):
         if self.args.backbone_network == 'vgg11':
             x = self.features(x)
+            #print('x', x.shape)
+            #print('ssw_output', ssw_output.shape)
             x = self.spp_layer(x, ssw_output)
             x = F.relu(self.fc6(x))
             x = F.relu(self.fc7(x))
@@ -155,6 +157,9 @@ class WSDDN(nn.Module):
         
         for i in range(BATCH_SIZE):
             for j in range(ssw.size(1)):
+                #print('xywh2', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i,j,2]), math.floor(ssw[i, j, 3]))
+                #print('xywh', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i, j, 0] + ssw[i, j, 2]), math.floor(ssw[i, j, 1] + ssw[i, j, 3]))
+
                 feature_map_piece = torch.unsqueeze(x[i, :, math.floor(ssw[i, j, 0]) : math.floor(ssw[i, j, 0] + ssw[i, j, 2]), \
                                                     math.floor(ssw[i, j, 1]) : math.floor(ssw[i, j, 1] + ssw[i, j, 3])], 0)
                 #print('unsq', feature_map_piece.shape)
@@ -189,8 +194,8 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
     """
     
     for i in range(len(out_pool_size)):
-        h_wid = math.ceil(previous_conv_size[0] / out_pool_size[i])
-        w_wid = math.ceil(previous_conv_size[1] / out_pool_size[i])
+        h_wid = int(math.ceil(previous_conv_size[0] / out_pool_size[i]))
+        w_wid = int(math.ceil(previous_conv_size[1] / out_pool_size[i]))
         h_pad = min(math.floor((h_wid*out_pool_size[i] - previous_conv_size[0] + 1)/2), math.floor(h_wid/2))
         w_pad = min(math.floor((w_wid*out_pool_size[i] - previous_conv_size[1] + 1)/2), math.floor(w_wid/2))
         
