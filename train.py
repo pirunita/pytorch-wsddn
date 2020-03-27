@@ -60,7 +60,7 @@ def train(args, model):
     
     if args.datamode == 'train':
         train_data = WSDDNDataset(args)
-        train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=args.batch_size, shuffle=False, num_workers=1)
+        train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=args.batch_size, shuffle=False, num_workers=0)
         model.train()
         for step in tqdm.tqdm(range(args.epoch)):
             running_loss = 0.0
