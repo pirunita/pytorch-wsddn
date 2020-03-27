@@ -7,11 +7,11 @@ import os
 import scipy.io as sio
 import torch
 import torch.utils.data as data
-import torchvision.transforms as transforms
+import torchvision
 import tqdm
 
-from PIL import Image
-
+from PIL import Image, ImageDraw
+from utils import Augmentation, BoxReshape, Normalize
 # Set logger
 logger = logging.getLogger('DataLoader')
 logger.handlers.clear()
@@ -32,15 +32,9 @@ class WSDDNDataset(data.Dataset):
         self.image_label_path = args.image_label_path
         self.ssw_path = args.ssw_path
         self.text_path = args.text_path
-        
-        
-        self.transform = transforms.Compose([  \
-            transforms.Resize([500, 500]), \
-            transforms.RandomHorizontalFlip(), \
-            transforms.ToTensor(), \
-            transforms.Normalize(mean = [ 0.485, 0.456, 0.406],
-                                std = [0.229, 0.224, 0.225])
-        ])
+        self.augmentation = Augmentation()
+        self.image_transform = Normalize()
+        self.block_transform = BoxReshape()
         
         self.imgs = []
         self.ssw_list = sio.loadmat(os.path.join(self.root, self.mode, self.ssw_path))['boxes'][0] 
@@ -63,46 +57,61 @@ class WSDDNDataset(data.Dataset):
                 image_label_list = self.image_label_list[file_name]
                 for i in range(0, len(image_label_list)):
                     image_label_current[i] = 1
+                    
                 ssw_info = self.ssw_list[idx]
-                ssw_block = torch.Tensor(math.floor((ssw_info.shape[0])), 4)
-                # x, y, w, h 
-                for i in range(0, ssw_info.shape[0]):
-                    ssw_block[i, 0] = math.floor(ssw_info[i, 0] / 16) + 1
-                    ssw_block[i, 1] = math.floor(ssw_info[i, 1] / 16) + 1
-                    ssw_block[i, 2] = math.ceil((ssw_info[i, 0] + ssw_info[i, 2]) / 16) - 1 - (math.floor(ssw_info[i, 0] / 16) + 1)
-                    ssw_block[i, 3] = math.ceil((ssw_info[i, 1] + ssw_info[i, 3]) / 16) - 1 - (math.floor(ssw_info[i, 1] / 16) + 1)
-                    w = max(int(ssw_block[i, 2]), 2)
-                    h = max(int(ssw_block[i, 3]), 2)
-                    ssw_block[i, 0] = (30 - w if (int(ssw_block[i, 0]) + w >= 30) else int(ssw_block[i, 0])) 
-                    ssw_block[i, 1] = (30 - h if (int(ssw_block[i, 1]) + h >= 30) else int(ssw_block[i, 1]))
-                    if ssw_block[i, 0] == -1:
-                        ssw_block[i, 0] = 0
-                    if ssw_block[i, 1] == -1:
-                        ssw_block[i, 1] = 0
-                    ssw_block[i, 2] = w
-                    ssw_block[i, 3] = h
-                """
-                for i in range(math.floor((ssw_info.shape[0] - 1) / 4)):
-                    print(ssw_info[i*4 + 3])
-                    w = max(int(ssw_info[i*4 + 3]), 2)
-                    h = max(int(ssw_info[i*4 + 4]), 2)
-                    ssw_block[i, 0] = (30 - w if (int(ssw_info[i*4 + 1]) + w >= 31) else int(ssw_info[i*4 + 1]))
-                    ssw_block[i, 1] = (30 - h if (int(ssw_info[i*4 + 2]) + h >= 31) else int(ssw_info[i*4 + 2]))
-                    ssw_block[i, 2] = w
-                    ssw_block[i, 3] = h
-                """    
-                self.imgs.append([file_name, ssw_block, image_label_current])
-            
-
+                
+                self.imgs.append([file_name, ssw_info, image_label_current])
+    
+    """
+    def transform(self, image):
+        # [480, 576, 688, 864, 1200]
+        im_size_min = min(image)
+        a = [480, 576, 688, 864, 1200]
+        
+        trans = transforms.Compose([  \
+            transforms.Resize([480, 480]), \
+            transforms.RandomHorizontalFlip(), \
+            transforms.ToTensor(), \
+            transforms.Normalize(mean = [ 0.485, 0.456, 0.406],
+                                std = [0.229, 0.224, 0.225])
+        ])
+    """
     def __getitem__(self, index):
-        current_img = Image.open(os.path.join(self.root, self.mode, self.jpeg_path, self.imgs[index][0] + '.jpg'))
         file_name = self.imgs[index][0]
-        data_once = self.transform(current_img)
-        ssw_block = self.imgs[index][1]
+        ssw_info = self.imgs[index][1]
         label_once = self.imgs[index][2]
         
-        return file_name, data_once, ssw_block, torch.Tensor(label_once)
+        current_img = Image.open(os.path.join(self.root, self.mode, self.jpeg_path, file_name + '.jpg'))
+        
+        augment_image, augment_ssw_block = self.augmentation(current_img, ssw_info)
+        #print('augment_image', augment_image.size)
+        #print('augment_ssw_block', len(augment_ssw_block))
+        #self.show_image(augment_image, ssw_block[6], augment_ssw_block[6])
+        data_once = self.image_transform(augment_image)
+        
+        reshaped_ssw_block = self.block_transform(augment_image, augment_ssw_block)
+        #print('re', reshaped_ssw_block)
+        
+    
+        
+        
+        return file_name, data_once, reshaped_ssw_block, torch.Tensor(label_once)
 
     def __len__(self):
         return len(self.imgs)
     
+    @staticmethod
+    def show_image(image, ssw_block, augment_ssw_block):
+        shape1 = [ssw_block[1], ssw_block[0], ssw_block[3], ssw_block[2]]
+        shape2 = [augment_ssw_block[1], augment_ssw_block[0], augment_ssw_block[3], augment_ssw_block[2]]
+        draw_image = ImageDraw.Draw(image)
+        draw_image.rectangle(shape1, outline='red')
+        draw_image.rectangle(shape2, outline='blue')
+        image.show()
+        
+        
+        
+
+
+
+
