@@ -44,7 +44,7 @@ class BoxReshape(object):
             N_box_maxX = math.floor(feature_map_size * box_maxX / image_width)
             N_box_maxY = math.floor(feature_map_size * box_maxY / image_height)
             
-            N_box_width = math.ceil((box_minX + box_maxX) * feature_map_size / image_width) - 1 - (math.floor(box_minX * feature_map_size / image_width) + 1)
+            N_box_width = math.ceil((box_minX + box_maxX) * feature_map_size / image_width) - 1 - (math.floor(box_minX * feature_map_size / image_width) + 1
             N_box_height = math.ceil((box_minY + box_maxY) * feature_map_size / image_height) - 1 - (math.floor(box_minY * feature_map_size / image_height) + 1)
             
             reshape_boxes[i, 0] = N_box_minX
