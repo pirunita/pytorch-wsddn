@@ -11,7 +11,7 @@ import torchvision
 import tqdm
 
 from PIL import Image, ImageDraw
-from utils import Augmentation, BoxReshape, Normalize
+from utils import Augmentation, Normalize
 # Set logger
 logger = logging.getLogger('DataLoader')
 logger.handlers.clear()
@@ -34,7 +34,7 @@ class WSDDNDataset(data.Dataset):
         self.text_path = args.text_path
         self.augmentation = Augmentation()
         self.image_transform = Normalize()
-        self.block_transform = BoxReshape()
+        #self.block_transform = BoxReshape()
         
         self.imgs = []
         self.ssw_list = sio.loadmat(os.path.join(self.root, self.mode, self.ssw_path))['boxes'][0] 
@@ -89,13 +89,13 @@ class WSDDNDataset(data.Dataset):
         #self.show_image(augment_image, ssw_block[6], augment_ssw_block[6])
         data_once = self.image_transform(augment_image)
         
-        reshaped_ssw_block = self.block_transform(augment_image, augment_ssw_block)
+        #reshaped_ssw_block = self.block_transform(augment_image, augment_ssw_block)
         #print('re', reshaped_ssw_block)
         
     
         
         
-        return file_name, data_once, reshaped_ssw_block, torch.Tensor(label_once)
+        return file_name, data_once, augment_ssw_block, torch.Tensor(label_once)
 
     def __len__(self):
         return len(self.imgs)

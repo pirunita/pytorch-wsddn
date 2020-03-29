@@ -66,7 +66,10 @@ def train(args, model):
             running_loss = 0.0
             train_size = 0
             for i, (file_name, images, ssw_block, labels) in tqdm.tqdm(enumerate(train_loader)):
+                images_width, images_height = images.size
                 
+                images_width = Variable(images_width).cuda()
+                images_height = Variable(images_height).cuda()
                 images = Variable(images).cuda()
                 ssw_block = Variable(ssw_block).cuda()
                 labels = Variable(labels).cuda()
@@ -75,7 +78,7 @@ def train(args, model):
                 else:
                     optimizer2.zero_grad()
                 
-                output, output_clf, output_det = model(images, ssw_block)
+                output, output_clf, output_det = model(images, ssw_block, image_width, image_height)
                 output = torch.sigmoid(output)
                 loss = criterion(output, labels)
                 

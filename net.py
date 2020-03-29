@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from utils import BoxReshape
 BATCH_SIZE = 1
 
 class WSDDN(nn.Module):
@@ -11,6 +12,7 @@ class WSDDN(nn.Module):
         super(WSDDN, self).__init__()
         
         self.args = args
+        self.block_transform = BoxReshape()
         # VGG11
         if self.args.backbone_network == 'vgg11':
             self.features = nn.Sequential(
@@ -108,9 +110,10 @@ class WSDDN(nn.Module):
         self.cls_softmax = nn.Softmax(dim=2)
         self.det_softmax = nn.Softmax(dim=1)
         
-    def forward(self, x, ssw_output):
+    def forward(self, x, ssw_block, x_width, x_height):
         if self.args.backbone_network == 'vgg11':
             x = self.features(x)
+            ssw_output = self.block_transform(ssw_block, x_width, x_height, conv_width, conv_height)
             print('x', x.shape)
             print('ssw_output', ssw_output.shape)
             x = self.spp_layer(x, ssw_output)
