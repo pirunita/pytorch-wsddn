@@ -87,15 +87,16 @@ class WSDDNDataset(data.Dataset):
         #print('augment_image', augment_image.size)
         #print('augment_ssw_block', len(augment_ssw_block))
         #self.show_image(augment_image, ssw_block[6], augment_ssw_block[6])
+        image_width, image_height = augment_image.size
         data_once = self.image_transform(augment_image)
-        
+        block_once = torch.Tensor(augment_ssw_block) 
         #reshaped_ssw_block = self.block_transform(augment_image, augment_ssw_block)
         #print('re', reshaped_ssw_block)
         
     
         
         
-        return file_name, data_once, augment_ssw_block, torch.Tensor(label_once)
+        return file_name, data_once, image_width, image_height, block_once, torch.Tensor(label_once)
 
     def __len__(self):
         return len(self.imgs)
