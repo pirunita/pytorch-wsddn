@@ -113,9 +113,11 @@ class WSDDN(nn.Module):
     def forward(self, x, ssw_block, x_width, x_height):
         if self.args.backbone_network == 'vgg11':
             x = self.features(x)
+            conv_width = x.shape[2]
+            conv_height = x.shape[3]
             ssw_output = self.block_transform(ssw_block, x_width, x_height, conv_width, conv_height)
-            print('x', x.shape)
-            print('ssw_output', ssw_output.shape)
+            #print('x', x.shape)
+            #print('ssw_output', ssw_output.shape)
             x = self.spp_layer(x, ssw_output)
             x = F.relu(self.fc6(x))
             x = F.relu(self.fc7(x))
@@ -156,22 +158,22 @@ class WSDDN(nn.Module):
         x.shape = [BATCH, 256, 29, 29]
         ssw_output = [BATCH, r, 4]
         """
-        print(ssw.shape)
+        #print(ssw.shape)
         
         for i in range(BATCH_SIZE):
             for j in range(ssw.size(1)):
-                print('xywh2', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i,j,2]), math.floor(ssw[i, j, 3]))
-                print('xywh', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i, j, 0] + ssw[i, j, 2]), math.floor(ssw[i, j, 1] + ssw[i, j, 3]))
+                #print('xywh2', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i,j,2]), math.floor(ssw[i, j, 3]))
+                #print('xywh', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i, j, 0] + ssw[i, j, 2]), math.floor(ssw[i, j, 1] + ssw[i, j, 3]))
 
                 feature_map_piece = torch.unsqueeze(x[i, :, math.floor(ssw[i, j, 0]) : math.floor(ssw[i, j, 0] + ssw[i, j, 2]), \
                                                     math.floor(ssw[i, j, 1]) : math.floor(ssw[i, j, 1] + ssw[i, j, 3])], 0)
-                print('unsq', feature_map_piece.shape)
+                #print('unsq', feature_map_piece.shape)
                 feature_map_piece = spatial_pyramid_pool(previous_conv=feature_map_piece, \
                                                          num_sample=1, \
                                                          previous_conv_size = [feature_map_piece.size(2), feature_map_piece.size(3)], \
                                                          out_pool_size=[2, 2])
-                print('spa', feature_map_piece.shape)
-                print('xx', x.shape)
+                #print('spa', feature_map_piece.shape)
+                #print('xx', x.shape)
                 if j == 0:
                     y_piece = feature_map_piece
                 else:
