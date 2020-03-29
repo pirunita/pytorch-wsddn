@@ -153,7 +153,7 @@ class WSDDN(nn.Module):
         x.shape = [BATCH, 256, 29, 29]
         ssw_output = [BATCH, r, 4]
         """
-        #print(ssw.shape)
+        print(ssw.shape)
         
         for i in range(BATCH_SIZE):
             for j in range(ssw.size(1)):
@@ -168,6 +168,7 @@ class WSDDN(nn.Module):
                                                          previous_conv_size = [feature_map_piece.size(2), feature_map_piece.size(3)], \
                                                          out_pool_size=[2, 2])
                 print('spa', feature_map_piece.shape)
+                print('xx', x.shape)
                 if j == 0:
                     y_piece = feature_map_piece
                 else:
