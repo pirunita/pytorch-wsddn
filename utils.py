@@ -28,6 +28,8 @@ class BoxReshape(object):
         
         reshape_boxes = torch.Tensor(math.floor(len(boxes[0])), 4)
         for i, box in enumerate(boxes[0]):
+            image_width = image_width.float()
+            image_height = image_height.float()
             
             box_minY = box[0]
             box_minX = box[1]
@@ -37,22 +39,25 @@ class BoxReshape(object):
             #print('box', box)
             N_box_minX = math.floor(conv_width * box_minX / image_width)
             N_box_minY = math.floor(conv_height * box_minY / image_height)
-            N_box_maxX = math.floor(conv_width * box_maxX / image_width)
-            N_box_maxY = math.floor(conv_height * box_maxY / image_height)
+            N_box_maxX = math.ceil(conv_width * box_maxX / image_width)
+            N_box_maxY = math.ceil(conv_height * box_maxY / image_height)
             
             #print('N_box', N_box_minX, N_box_minY, N_box_maxX, N_box_maxY)
-            N_box_width = math.ceil(N_box_maxX + 1 - (N_box_minX - 1))
-            N_box_height = math.ceil(N_box_maxY + 1 - (N_box_minY - 1))
-            if N_box_minX + N_box_width > conv_width:
-                N_box_minX = N_box_minX - 1
-            if N_box_minY + N_box_height > conv_height:
-                N_box_minY = N_box_minY - 1
+            N_box_width = N_box_maxX - N_box_minX
+            N_box_height = N_box_maxY - N_box_minY
+            #print('N_box_width', N_box_width)
+            #print('N_box_height', N_box_height)
             #N_box_width = math.ceil((box_maxX + box_minX) * feature_map_size / image_width) + 1 - (math.floor(box_minX * feature_map_size / image_width))
             #N_box_height = math.ceil((box_maxY + box_minY) * feature_map_size / image_height) + 1 - (math.floor(box_minY * feature_map_size / image_height))
-            if N_box_minX < 0 :
-                N_box_minX = 0
-            if N_box_minY < 0 :
-                N_box_minY = 0
+            #if N_box_width == 0:
+                #print("fuck")
+                #print(box_minX)
+                #print(box_maxX)
+                #print('conv_width, image_width', conv_width, image_width)
+                #print((conv_width * box_minX / image_width.float()))
+                ##print((conv_width * box_maxX / image_width))
+                #print(N_box_minX)
+                #print(N_box_maxX)
             reshape_boxes[i, 0] = N_box_minX
             reshape_boxes[i, 1] = N_box_minY
             reshape_boxes[i, 2] = N_box_width
