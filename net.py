@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from utils import BoxReshape
+
 BATCH_SIZE = 1
 
 class WSDDN(nn.Module):
@@ -119,6 +120,7 @@ class WSDDN(nn.Module):
             #print('x', x.shape)
             #print('ssw_output', ssw_output.shape)
             x = self.spp_layer(x, ssw_output)
+            #print('x', x.shape)
             x = F.relu(self.fc6(x))
             x = F.relu(self.fc7(x))
             x_clf = F.relu(self.fc8c(x))
@@ -162,24 +164,36 @@ class WSDDN(nn.Module):
         
         for i in range(BATCH_SIZE):
             for j in range(ssw.size(1)):
+                #print('size', ssw.size(1))
                 #print('xywh2', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i,j,2]), math.floor(ssw[i, j, 3]))
-                #print('xywh', math.floor(ssw[i, j, 0]), math.floor(ssw[i, j, 1]), math.floor(ssw[i, j, 0] + ssw[i, j, 2]), math.floor(ssw[i, j, 1] + ssw[i, j, 3]))
-
+                #print('xywh', ssw[i, j, 0], ssw[i, j, 1], ssw[i, j, 0] + ssw[i, j, 2], ssw[i, j, 1] + ssw[i, j, 3])
+    
                 feature_map_piece = torch.unsqueeze(x[i, :, math.floor(ssw[i, j, 0]) : math.floor(ssw[i, j, 0] + ssw[i, j, 2]), \
                                                     math.floor(ssw[i, j, 1]) : math.floor(ssw[i, j, 1] + ssw[i, j, 3])], 0)
                 #print('unsq', feature_map_piece.shape)
+                
+                """
+                if feature_map_piece.size(2) == 0:
+                    print('feature_map')
+                    print(x.shape)
+                    print(feature_map_piece.shape)
+                    print(ssw[i, j, :])
+                """
                 feature_map_piece = spatial_pyramid_pool(previous_conv=feature_map_piece, \
                                                          num_sample=1, \
                                                          previous_conv_size = [feature_map_piece.size(2), feature_map_piece.size(3)], \
                                                          out_pool_size=[2, 2])
                 #print('spa', feature_map_piece.shape)
+                #print(j)
                 #print('xx', x.shape)
                 if j == 0:
                     y_piece = feature_map_piece
+                    #print('y_piece', y_piece.shape)
                 else:
                     #print('y',y_piece.shape)
                     #print('f',feature_map_piece.shape)
                     y_piece = torch.cat((y_piece, feature_map_piece))
+                    #print('y_piece2', y_piece.shape)
             
             if i == 0:
                 y = torch.unsqueeze(y_piece, 0)
@@ -198,22 +212,42 @@ def spatial_pyramid_pool(previous_conv, num_sample, previous_conv_size, out_pool
     
     returns: a tensor vector with shape [1 x n] is the concentration of multi-level pooling
     """
-    
+    #print(previous_conv_size)
+    spp = torch.tensor([]).cuda()
     for i in range(len(out_pool_size)):
+        
         h_wid = int(math.ceil(previous_conv_size[0] / out_pool_size[i]))
         w_wid = int(math.ceil(previous_conv_size[1] / out_pool_size[i]))
-        h_pad = min(math.floor((h_wid*out_pool_size[i] - previous_conv_size[0] + 1)/2), math.floor(h_wid/2))
-        w_pad = min(math.floor((w_wid*out_pool_size[i] - previous_conv_size[1] + 1)/2), math.floor(w_wid/2))
         
-        maxpool = nn.MaxPool2d((h_wid, w_wid), stride=(h_wid, w_wid), padding=(h_pad, w_pad))
+        if h_wid >= out_pool_size[i] and w_wid >= out_pool_size[i]:
+            #h_pad = math.floor((h_wid * out_pool_size[i] - previous_conv_size[0] + 1) / 2)
+            #w_pad = math.floor((w_wid * out_pool_size[i] - previous_conv_size[1] + 1) / 2)
+            h_pad = min(math.floor((h_wid*out_pool_size[i] - previous_conv_size[0] + 1)/2), math.floor(h_wid/2))
+            w_pad = min(math.floor((w_wid*out_pool_size[i] - previous_conv_size[1] + 1)/2), math.floor(w_wid/2))
         
-        x = maxpool(previous_conv)
-        
-        if(i == 0):
-            spp = x.view(num_sample, -1)
-            
-            
-        else:
+            maxpool = nn.MaxPool2d((h_wid, w_wid), stride=(h_wid, w_wid), padding=(h_pad, w_pad))
+            x = maxpool(previous_conv)
+            #print('info', h_wid, w_wid, h_pad, w_pad)
+            #print('x', x.shape)
             spp = torch.cat((spp, x.view(num_sample, -1)), 1)
+            #print('sppiter', spp.size())
+            """
+            try:
+                x = maxpool(previous_conv)
+                print('previous', previous_conv_size)
+                print('x', x.shape)
+                print('reshape', torch.cat((spp, x.view(num_sample, -1)), 1))
+                spp = torch.cat((spp, x.view(num_sample, -1)), 1)
+                print('spp', spp.size())
+            except RuntimeError as e:
+                print(e)
+                #print(previous_conv_size)
+                
+                break
+            """
+        
+        else:
+            break
+    #print('spp', spp.size())
         
     return spp
